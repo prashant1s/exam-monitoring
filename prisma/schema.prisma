@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  PROCTOR
+  STUDENT
+}
+
+enum ExamStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+enum SessionStatus {
+  PENDING
+  PRECHECK
+  IN_PROGRESS
+  SUBMITTED
+  FLAGGED
+  TERMINATED
+}
+
+enum EventType {
+  TAB_HIDDEN
+  WINDOW_BLUR
+  FULLSCREEN_EXIT
+  COPY
+  PASTE
+  RIGHT_CLICK
+  DEVTOOLS_OPEN
+  NETWORK_LOST
+  NETWORK_BACK
+  MULTIPLE_MONITORS
+  RESIZE
+  FACE_NONE
+  FACE_MULTIPLE
+  LOOKING_AWAY
+  PHONE_DETECTED
+  BOOK_DETECTED
+  MIC_LEVEL_HIGH
+  CAMERA_OFF
+  PROCTOR_WARNING
+  JOINED
+  LEFT
+  SUBMITTED
+}
+
+enum Severity {
+  INFO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model User {
+  id        String        @id @default(cuid())
+  email     String        @unique
+  name      String
+  role      Role          @default(STUDENT)
+  password  String
+  sessions  ExamSession[] @relation("candidate")
+  proctored ExamSession[] @relation("proctor")
+  createdAt DateTime      @default(now())
+}
+
+model Exam {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  startsAt    DateTime
+  durationMin Int
+  status      ExamStatus    @default(DRAFT)
+  settings    Json
+  questions   Question[]
+  sessions    ExamSession[]
+  createdBy   String
+  createdAt   DateTime      @default(now())
+}
+
+model Question {
+  id     String  @id @default(cuid())
+  examId String
+  exam   Exam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  order  Int
+  type   String
+  prompt String
+  options Json?
+  answer Json?
+  points Int     @default(1)
+}
+
+model ExamSession {
+  id             String         @id @default(cuid())
+  examId         String
+  exam           Exam           @relation(fields: [examId], references: [id])
+  candidateId    String
+  candidate      User           @relation("candidate", fields: [candidateId], references: [id])
+  proctorId      String?
+  proctor        User?          @relation("proctor", fields: [proctorId], references: [id])
+  status         SessionStatus  @default(PENDING)
+  startedAt      DateTime?
+  submittedAt    DateTime?
+  integrityScore Int?
+  livekitRoom    String         @unique
+  recordingUrl   String?
+  answers        Answer[]
+  events         MonitorEvent[]
+
+  @@unique([examId, candidateId])
+}
+
+model Answer {
+  id         String      @id @default(cuid())
+  sessionId  String
+  session    ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionId String
+  value      Json
+  updatedAt  DateTime    @updatedAt
+
+  @@unique([sessionId, questionId])
+}
+
+model MonitorEvent {
+  id        String      @id @default(cuid())
+  sessionId String
+  session   ExamSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type      EventType
+  severity  Severity    @default(INFO)
+  at        DateTime    @default(now())
+  meta      Json?
+
+  @@index([sessionId, at])
+}
