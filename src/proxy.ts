@@ -2,8 +2,8 @@ import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
 
-// Uses the Edge-safe config only (no Credentials/argon2/Prisma) so middleware
-// can run on the Edge runtime — it just reads/validates the existing JWT.
+// Keep route checks lightweight. Full authorization still happens in the
+// server-side handlers that read or mutate protected data.
 const { auth } = NextAuth(authConfig);
 
 const ROLE_PREFIXES: { prefix: string; roles: string[] }[] = [
@@ -14,7 +14,9 @@ const ROLE_PREFIXES: { prefix: string; roles: string[] }[] = [
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const match = ROLE_PREFIXES.find((r) => pathname.startsWith(r.prefix));
+  const match = ROLE_PREFIXES.find((route) =>
+    pathname.startsWith(route.prefix),
+  );
   if (!match) return NextResponse.next();
 
   const user = req.auth?.user;
