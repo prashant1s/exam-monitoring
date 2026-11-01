@@ -22,6 +22,7 @@ export type MonitorEventPayload = z.infer<typeof monitorEventSchema>;
 
 // client -> server
 export interface ClientToServerEvents {
+  "exam:join": (payload: { examId: string }) => void;
   "session:join": (payload: { sessionId: string }) => void;
   "session:event": (payload: MonitorEventPayload) => void;
   heartbeat: (payload: { sessionId: string; ts: number }) => void;
@@ -36,6 +37,7 @@ export interface ServerToClientEvents {
     event: { type: EventType; severity: Severity; at: string; meta?: Record<string, unknown> };
   }) => void;
   "room:presence": (payload: { sessionId: string; online: boolean }) => void;
+  "room:session_status": (payload: { sessionId: string; status: string }) => void;
   "proctor:warn": (payload: { sessionId: string; message: string }) => void;
   "proctor:terminate": (payload: { sessionId: string; reason: string }) => void;
 }

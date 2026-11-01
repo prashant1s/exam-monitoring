@@ -12,6 +12,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ examId:
       include: {
         candidate: { select: { id: true, name: true, email: true } },
         _count: { select: { events: true } },
+        events: {
+          orderBy: { at: "desc" },
+          take: 20,
+          select: { id: true, type: true, severity: true, at: true },
+        },
       },
       orderBy: { startedAt: "asc" },
     });

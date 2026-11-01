@@ -10,7 +10,12 @@ export function getSocket(token: string) {
   const url = process.env.NEXT_PUBLIC_SOCKET_URL ?? "http://localhost:4000";
   socket = io(url, {
     auth: { token },
-    transports: ["websocket"],
+    transports: ["websocket", "polling"],
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 750,
+    reconnectionDelayMax: 5000,
+    timeout: 8000,
   });
   return socket;
 }

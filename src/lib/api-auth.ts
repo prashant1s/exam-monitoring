@@ -19,7 +19,7 @@ export async function requireRole(...roles: Array<"ADMIN" | "PROCTOR" | "STUDENT
   return user;
 }
 
-/** Load a session and verify the current user may access it (own session, assigned proctor, or admin). */
+/** Load a session and verify the current user may access it (own session, proctor, or admin). */
 export async function authorizeExamSession(
   user: { id: string; role: string },
   sessionId: string
@@ -31,7 +31,9 @@ export async function authorizeExamSession(
   if (!examSession) throw new ApiError(404, "Session not found");
 
   const isOwner = examSession.candidateId === user.id;
-  const isProctor = examSession.proctorId === user.id;
+  // The proctor dashboard is exam-scoped and intentionally exposes live rooms to every
+  // proctor account. Keep video tokens, session details, and reports consistent with it.
+  const isProctor = user.role === "PROCTOR";
   const isAdmin = user.role === "ADMIN";
   if (!isOwner && !isProctor && !isAdmin) throw new ApiError(403, "Forbidden");
 

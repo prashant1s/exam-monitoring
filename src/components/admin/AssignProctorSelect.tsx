@@ -34,7 +34,8 @@ export function AssignProctorSelect({
       value={value}
       disabled={saving}
       onChange={(e) => onChange(e.target.value)}
-      className="rounded-[--radius-sm] border border-neutral-300 bg-white px-2 py-1 text-xs shadow-sm focus-visible:outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-accent-ring/40"
+      aria-label="Assign proctor"
+      className="h-8 max-w-36 rounded-[var(--radius-sm)] border border-neutral-200 bg-white px-2.5 text-xs font-medium text-neutral-700 shadow-sm transition-all hover:border-neutral-300 focus-visible:border-accent focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-accent-ring/20 disabled:cursor-wait"
     >
       <option value="">Unassigned</option>
       {proctors.map((p) => (
