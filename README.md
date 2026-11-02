@@ -50,13 +50,34 @@ two as well.
 npm i -g vercel      # if you don't have it
 vercel login
 vercel link          # run from the repo root
-vercel env add DATABASE_URL production
-vercel env add AUTH_SECRET production
-vercel env add NEXT_PUBLIC_APP_URL production        # your vercel URL, e.g. https://your-app.vercel.app
-vercel env add NEXT_PUBLIC_SOCKET_URL production      # from step 2, e.g. https://your-realtime.up.railway.app
-vercel env add SOCKET_JWT_SECRET production            # must match the realtime service's value
+vercel env add DATABASE_URL production,preview
+vercel env add AUTH_SECRET production,preview
+vercel env add NEXT_PUBLIC_APP_URL production,preview
+vercel env add NEXT_PUBLIC_SOCKET_URL production,preview
+vercel env add SOCKET_JWT_SECRET production,preview
+vercel env add LIVEKIT_URL production,preview
+vercel env add LIVEKIT_API_KEY production,preview
+vercel env add LIVEKIT_API_SECRET production,preview
 vercel deploy --prod
 ```
+
+#### Vercel environment variables
+
+These variables are configured for both Production and Preview. Keep the actual secret values in
+Vercel; do not commit them to this repository.
+
+| Variable | Production value or source |
+| --- | --- |
+| `DATABASE_URL` | Neon pooled PostgreSQL connection string (secret) |
+| `AUTH_SECRET` | Random Auth.js signing secret (secret) |
+| `NEXT_PUBLIC_APP_URL` | `https://exam-monitor-pi.vercel.app` |
+| `NEXT_PUBLIC_SOCKET_URL` | `https://exam-monitor-realtime.onrender.com` |
+| `SOCKET_JWT_SECRET` | Random socket-token signing secret; must exactly match Render (secret) |
+| `LIVEKIT_URL` | LiveKit project WebSocket URL |
+| `LIVEKIT_API_KEY` | LiveKit project API key (secret) |
+| `LIVEKIT_API_SECRET` | LiveKit project API secret (secret) |
+
+R2, Redis, and Resend variables are not currently configured on Vercel and remain optional.
 
 Notes:
 - `postinstall` runs `prisma generate` automatically on every install, so Vercel's build always has
@@ -72,21 +93,19 @@ Notes:
 - LiveKit/R2/Resend env vars: add them the same way once you have those accounts; every route that
   needs them already checks and returns a clear 503 instead of crashing when they're unset.
 
-### 2. Realtime service → Railway
+### 2. Realtime service → Render
 
 ```bash
-npm i -g @railway/cli   # if you don't have it
-railway login
-railway init             # or: railway link, if a project already exists
-railway variables set DATABASE_URL="..." AUTH_SECRET="..." SOCKET_JWT_SECRET="..." NEXT_PUBLIC_APP_URL="https://your-app.vercel.app"
-railway up
+# Render Web Service settings
+Build command: npm install --ignore-scripts --no-audit --no-fund --legacy-peer-deps && npx prisma generate
+Start command: npm run start:realtime
+Health check: /health
 ```
 
-`railway.json` at the repo root already points Railway's start command at
-`npm run start:realtime` (Nixpacks build, health check on `/health`) — no dashboard configuration
-needed beyond the env vars above. `SOCKET_JWT_SECRET` here must be the exact same value you set on
-Vercel; it's how the Next.js app's `/api/socket-token` route and this service agree on a signed JWT.
-Once it's up, set `NEXT_PUBLIC_SOCKET_URL` on Vercel to this service's Railway URL and redeploy.
+Set `DATABASE_URL`, `SOCKET_JWT_SECRET`, `NEXT_PUBLIC_APP_URL`, and `NODE_VERSION=22` on Render.
+`SOCKET_JWT_SECRET` must be the exact same value used on Vercel; it is how the Next.js app's
+`/api/socket-token` route and the realtime service agree on a signed JWT. The deployed service is
+`https://exam-monitor-realtime.onrender.com`, and its health endpoint is `/health`.
 
 ### 3. Video → LiveKit Cloud (optional)
 
